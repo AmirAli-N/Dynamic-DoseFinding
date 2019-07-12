@@ -24,12 +24,6 @@ var_estimate=matrix(NA, nrow=patient, ncol=J)
 true_theta=c(0.0, 0.07, 0.18, 0.47, 1.19, 2.69, 5, 7.31, 8.81, 9.53, 9.82)
 curve_st="sigmoid-significant"
 target_dose=10
-#true_theta=c(0, 0.01, 0.02, 0.05, 0.12, 0.27, 0.5, 0.73, 0.88, 0.95, 0.98)
-#curve_st="sigmoid-not-significant"
-#target_dose=10
-#true_theta=c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#curve_st="flat"
-#target_dose=5
 ############################################################################
 
 theta_max=10
@@ -53,27 +47,27 @@ dose_allocation<-function(updated_thetas, updated_sigma, dose, y){
 	theta_est=mcmc_r$trace[,1:2]
 	sigma_est=mcmc_r$trace[,3]
 	var_j=sapply(1:J, function(i)	{
-										var_jm=unlist(sapply(1:length(sigma_est), function(j)	{
-																									y_jm=rnorm(1, theta_max/(1+(theta_est[j,1]/i)^theta_est[j,2]), sigma_est[j])
-																									y_temp=c(y, y_jm)
-																									dose_temp=c(dose, i)
-																									mcmc_temp<-Metro_Hastings(li_func=log_density, pars=c(theta_est[j,], sigma_est[j]), par_names=c('theta_0', 'theta_1', 'sigma'), iterations=1000, quiet=TRUE, data=cbind(dose_temp,y_temp))
-																									mcmc_temp<-mcmc_thin(mcmc_temp, thin=100)
-																									theta_temp=mcmc_temp$trace[,1:2]
-																									sigma_temp=mcmc_temp$trace[,3]
-																									ED95=c()
-																									ED95=sapply(1:length(sigma_temp), function(z)	{
-																																						f_z_theta=theta_max/(1+(theta_temp[z,1]/seq.int(1,J,1))^theta_temp[z,2])
-																																						if(all(f_z_theta<=0)){
-																																							return(NA)
-																																						} else{
-																																							return(min(which(f_z_theta>=0.95*max(f_z_theta))))
-																																						}
-																																					})
-																									return(var(ED95, na.rm=TRUE))
-																								}))
-										return(mean(var_jm))
-									})
+		var_jm=unlist(sapply(1:length(sigma_est), function(j)	{
+			y_jm=rnorm(1, theta_max/(1+(theta_est[j,1]/i)^theta_est[j,2]), sigma_est[j])
+			y_temp=c(y, y_jm)
+			dose_temp=c(dose, i)
+			mcmc_temp<-Metro_Hastings(li_func=log_density, pars=c(theta_est[j,], sigma_est[j]), par_names=c('theta_0', 'theta_1', 'sigma'), iterations=1000, quiet=TRUE, data=cbind(dose_temp,y_temp))
+			mcmc_temp<-mcmc_thin(mcmc_temp, thin=10)
+			theta_temp=mcmc_temp$trace[,1:2]
+			sigma_temp=mcmc_temp$trace[,3]
+			ED95=c()
+			ED95=sapply(1:length(sigma_temp), function(z)	{
+			f_z_theta=theta_max/(1+(theta_temp[z,1]/seq.int(1,J,1))^theta_temp[z,2])
+				if(all(f_z_theta<=0)){
+					return(NA)
+				} else{
+					return(min(which(f_z_theta>=0.95*max(f_z_theta))))
+				}
+			})
+			return(var(ED95, na.rm=TRUE))
+		}))
+		return(mean(var_jm))
+	})
 	return(list("variance"=var_j, "par_est"=colMeans(mcmc_r$trace)))							
 }
 
@@ -92,9 +86,6 @@ for (reps in 1:n_simulation){
 			res<-dose_allocation(updated_thetas[k,], updated_sigma[k], dose, y)
 		} else{
 			res<-dose_allocation(updated_thetas[k-1,], updated_sigma[k-1], dose, y)
-			if (k%%10==0){
-			  print(k)
-			}
 		}
 		temp_var=res$variance
 		par_estimate[k,]=res$par_est
@@ -105,8 +96,8 @@ for (reps in 1:n_simulation){
 		updated_thetas[k,]=par_estimate[k, 1:2]
 		updated_sigma[k]=par_estimate[k,3]
 	}
-	write.table(var_estimate, file=paste("C:/Users/snasrol/Google Drive/Research-Dynamic programming to dose-finding clinical trials/Codes/Results-10dose/12.11.2018/",curve_st,"/1000patients-MCMC-est_var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
-	write.table(par_estimate, file=paste("C:/Users/snasrol/Google Drive/Research-Dynamic programming to dose-finding clinical trials/Codes/Results-10dose/12.11.2018/",curve_st,"/1000patients-MCMC-params-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+	write.table(var_estimate, file=paste("C:/Results/",curve_st,"/MCMC-est_var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+	write.table(par_estimate, file=paste("C:/Results/",curve_st,"/MCMC-params-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
 	y=c()
 	dose=c()
 	par_estimate=matrix(NA, nrow=patient, ncol=J)
@@ -114,4 +105,3 @@ for (reps in 1:n_simulation){
 }
 end_time=Sys.time()
 start_time-end_time
-
