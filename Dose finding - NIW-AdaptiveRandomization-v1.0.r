@@ -23,20 +23,14 @@ theta_estimate=matrix(NA, nrow=patient, ncol=J)
 prob_estimate=matrix(NA, nrow=patient, ncol=J)
 var_obs=matrix(NA, nrow=patient, ncol=J)
 M=1000
-T=100
-n_simulation=1
+T=1000
+n_simulation=30
 start_time=0
 end_time=0
 ############################################################################
 true_theta=c(0.0, 0.07, 0.18, 0.47, 1.19, 2.69, 5, 7.31, 8.81, 9.53, 9.82)
 curve_st="sigmoid-significant"
 target_dose=10
-#true_theta=c(0, 0.01, 0.02, 0.05, 0.12, 0.27, 0.5, 0.73, 0.88, 0.95, 0.98)
-#curve_st="sigmoid-not-significant"
-#target_dose=10
-#true_theta=c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#curve_st="flat"
-#target_dose=5
 ############################################################################
 evolution_eq <-function(q_n, theta_n, b_n, B_n, new_y, z_j){
 	e_z = rep(0, J)
@@ -54,43 +48,43 @@ dose_allocation <-function(q_n, theta_n, b_n, B_n){
 	#create a sample of M simulated thetas
 	R=rWishart(M, b_n, B_n)
 	mu=matrix(unlist(lapply(seq(dim(R)[3]), function(x)	{
-															sigma=ginv(R[,,x])
-															sigma=(sigma+t(sigma))/2
-															rmvnorm(1, theta_n, (1/q_n)*sigma)
-														})), nrow=dim(R)[3], ncol=J, byrow=TRUE)
+		sigma=ginv(R[,,x])
+		sigma=(sigma+t(sigma))/2
+		rmvnorm(1, theta_n, (1/q_n)*sigma)
+	})), nrow=dim(R)[3], ncol=J, byrow=TRUE)
 	theta_est<-apply(mu, 2, mean)
 	#var_j=sapply(1:ncol(mu), function(i){
 	p_j=sapply(1:ncol(mu), function(i){
-											#var_jm=unlist(lapply(mu[ ,i], function(mu_ni)	{
-											p_jm=unlist(lapply(mu[ ,i], function(mu_ni)	{
-																							y_jm=rt(1, b_n-J+1)*(q_n*(b_n-J+1))/((q_n+1)*B_n[i, i])+mu_ni
-																							temp_res<-evolution_eq(q_n, theta_n, b_n, B_n, y_jm, i)
-																							temp_q=temp_res$que
-																							temp_theta=temp_res$theta
-																							temp_b=temp_res$b
-																							temp_B=temp_res$B$mat #if comming from the nearPD library
-																							#temp_R=rWishart(T, temp_b, round(temp_B, digits=6))
-																							temp_R=rWishart(T, temp_b, as.matrix(temp_B))
-																							temp_mu=matrix(unlist(lapply(seq(dim(temp_R)[3]), function(j)	{	
-																																								sigma=ginv(temp_R[,,j])
-																																								sigma=(sigma+t(sigma))/2
-																																								rmvnorm(1, temp_theta, (1/q_n)*sigma)
-																																							})), nrow=dim(temp_R)[3], ncol=J, byrow=TRUE)
-																							ED95=c()
-																							ED95=apply(temp_mu, 1, function(z)	{
-																																	if (all(z<=0)){
-																																		return(NA)
-																																	} else{
-																																		return(min(which(z>=0.95*max(z))))
-																																	}
-																																})
-																							P=length(which(ED95==i))/length(ED95[!is.na(ED95)])
-																							return(P)
-																							#return(var(ED95, na.rm=TRUE))
-																						}))
-											#return(mean(var_jm))
-											return(mean(p_jm))
-										})
+		#var_jm=unlist(lapply(mu[ ,i], function(mu_ni)	{
+		p_jm=unlist(lapply(mu[ ,i], function(mu_ni)	{
+			y_jm=rt(1, b_n-J+1)*(q_n*(b_n-J+1))/((q_n+1)*B_n[i, i])+mu_ni
+			temp_res<-evolution_eq(q_n, theta_n, b_n, B_n, y_jm, i)
+			temp_q=temp_res$que
+			temp_theta=temp_res$theta
+			temp_b=temp_res$b
+			temp_B=temp_res$B$mat #if comming from the nearPD library
+			#temp_R=rWishart(T, temp_b, round(temp_B, digits=6))
+			temp_R=rWishart(T, temp_b, as.matrix(temp_B))
+			temp_mu=matrix(unlist(lapply(seq(dim(temp_R)[3]), function(j)	{	
+				sigma=ginv(temp_R[,,j])
+				sigma=(sigma+t(sigma))/2
+				rmvnorm(1, temp_theta, (1/q_n)*sigma)
+			})), nrow=dim(temp_R)[3], ncol=J, byrow=TRUE)
+			ED95=c()
+			ED95=apply(temp_mu, 1, function(z)	{
+				if (all(z<=0)){
+					return(NA)
+				} else{
+					return(min(which(z>=0.95*max(z))))
+				}
+			})
+			P=length(which(ED95==i))/length(ED95[!is.na(ED95)])
+			return(P)
+		#return(var(ED95, na.rm=TRUE))
+		}))
+		#return(mean(var_jm))
+		return(mean(p_jm))
+	})
 	#return(list("variance"=var_j, "theta"=theta_est))
 	return(list("probability"=p_j, "theta"=theta_est))
 }
@@ -133,16 +127,14 @@ for (reps in 1:n_simulation){
 		
 		R=rWishart(M, b_n[k], B_n[[k]])
 		var_obs[k,]=diag(rowMeans(array(unlist(lapply(seq(dim(R)[3]), function(x)	{
-																						sigma=ginv(R[,,x])
-																						simga=(sigma+t(sigma))/2
-																						(1/q_n[k])*sigma
-																					})), c(J,J,M)), dims=2))
+			sigma=ginv(R[,,x])
+			simga=(sigma+t(sigma))/2(1/q_n[k])*sigma
+		})), c(J,J,M)), dims=2))
 	}
-
-	write.table(var_obs, file=paste("C:/Users/snasrol/Google Drive/Research-Dynamic programming to dose-finding clinical trials/Codes/Results-10dose/12.11.2018/",curve_st,"/1000patients-NIW-obs_var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
-	write(dose, file=paste("C:/Users/snasrol/Google Drive/Research-Dynamic programming to dose-finding clinical trials/Codes/Results-10dose/12.11.2018/",curve_st,"/1000patients-NIW-doses-",toString(reps),".txt", sep=""), append=FALSE, sep="\n")
-	write.table(var_estimate, file=paste("C:/Users/snasrol/Google Drive/Research-Dynamic programming to dose-finding clinical trials/Codes/Results-10dose/12.11.2018/",curve_st,"/1000patients-NIW-est_var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
-	write.table(theta_estimate, file=paste("C:/Users/snasrol/Google Drive/Research-Dynamic programming to dose-finding clinical trials/Codes/Results-10dose/12.11.2018/",curve_st,"/1000patients-NIW-thetas-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+	write.table(var_obs, file=paste("C:/Results/",curve_st,"/NIW-obs_var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+	write(dose, file=paste("C:/Results/",curve_st,"/NIW-doses-",toString(reps),".txt", sep=""), append=FALSE, sep="\n")
+	write.table(var_estimate, file=paste("C:/Results/",curve_st,"/NIW-est_var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+	write.table(theta_estimate, file=paste("C:/Results/",curve_st,"/NIW-thetas-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
 	y=c() #response vector
 	dose=c() #dose vector
 	theta_estimate=matrix(NA, nrow=patient, ncol=J)
