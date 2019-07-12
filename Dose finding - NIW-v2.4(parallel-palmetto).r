@@ -11,8 +11,8 @@ first_stage_patients=J^2
 patient=400#number of patients
 true_sigma=c(10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10) #true deviation of responses
 
-M=100
-T=100
+M=1000
+T=1000
 n_simulation=30
 start_time=0
 end_time=0
@@ -20,12 +20,6 @@ end_time=0
 true_theta=c(0.0, 0.07, 0.18, 0.47, 1.19, 2.69, 5, 7.31, 8.81, 9.53, 9.82)
 target_dose=10
 curve_st="sigmoid"
-#true_theta=c(0, 0.01, 0.02, 0.05, 0.12, 0.27, 0.5, 0.73, 0.88, 0.95, 0.98)
-#curve_st="sigmoid-not-significant"
-#target_dose=10
-#true_theta=c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-#curve_st="flat"
-#target_dose=5
 ############################################################################
 evolution_eq <-function(q_n, mu_n, b_n, Beta_n, new_y, z_j){
 	e_z=rep(0, J)
