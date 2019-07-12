@@ -11,9 +11,9 @@ library(doSNOW)
 ###########################
 #Variable initialization###
 J=11 #number of doses
-patient=61 #number of patients
-true_theta=c(10, 11, 13, 18, 22, 23, 22, 18, 13, 11, 10)
-true_sigma=2
+patient=1000 #number of patients
+true_theta=c(0.0, 0.07, 0.18, 0.47, 1.19, 2.69, 5, 7.31, 8.81, 9.53, 9.82)
+true_sigma=100
 #Parameter initialization##
 y=lapply(1:J, function(x) c())
 dose=c()
@@ -157,9 +157,9 @@ for (k in 1:patient){
 }
 end_time=Sys.time()
 start_time-end_time
-write(dose, file="C:/Users/snasrol/Google Drive/Research-Dose finding/Codes/Results-10dose/09.12.2017/NDLM-curve1-2doses.txt", append=FALSE, sep="\n")
-write.table(var_estimate, file="C:/Users/snasrol/Google Drive/Research-Dose finding/Codes/Results-10dose/09.12.2017/NDLM-curve1-2var.txt", sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
-write.table(theta_estimate, file="C:/Users/snasrol/Google Drive/Research-Dose finding/Codes/Results-10dose/09.12.2017/NDLM-curve1-2thetas.txt", sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+write(dose, file="C:/Results/NDLM-doses.txt", append=FALSE, sep="\n")
+write.table(var_estimate, file="C:/Results/NDLM-var.txt", sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+write.table(theta_estimate, file="C:/Results/NDLM-thetas.txt", sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
 plot(dose[1:patient])
 length(which(dose[1:patient]==1))
 length(which(dose[1:patient]==2))
