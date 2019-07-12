@@ -1,4 +1,4 @@
-# Dynamic-DoseFinding
+# Dynamic Programming for Response-Adaptive Clinical Trials
 Dynamic response-adaptive design for dose-finding clinical trials (Find the paper at http://snasrol.people.clemson.edu)
 
 1-The dose-response approximation for KGC and NIW approaches is a first order construction described in Section 3 of the paper. The solution method, a special kind of one-step look-ahead policy known as konwledge gradient, is described in Section 4. The objective function in KGC and NIW (parallel-palmetto) codes is to minimize the variance of the target dose, whereas in the NIW-Adaptive Randomization code, the objective is to maximize the probability of correctly identifying the target dose.
