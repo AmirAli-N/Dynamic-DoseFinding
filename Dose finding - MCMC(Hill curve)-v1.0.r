@@ -7,14 +7,14 @@ library(coda)
 y=c() #response vector
 dose=c() #dose vector
 J=11 #number of doses	
-first_stage_patients=J*2
+first_stage_patients=33
 patient=1000#number of patients
-true_sigma=10 #true deviation of responses
+true_sigma=100 #true deviation of responses
 
 updated_thetas=matrix(NA, nrow=patient, ncol=2)
 updated_sigma=c()
 
-n_simulation=1
+n_simulation=30
 start_time=0
 end_time=0
 
@@ -34,7 +34,7 @@ log_density<-function(pars, data){
 	hill_fun<-theta_max/(1+(theta_0/data[,1])^theta_1)
 	log_hill_den=sum(dnorm(data[,2], hill_fun, sigma, log=TRUE))
 	prior_theta_0=dunif(theta_0, 0, 10, log=TRUE)
-	prior_theta_1=dunif(theta_1, -5, 20, log=TRUE)
+	prior_theta_1=dunif(theta_1, 0, 20, log=TRUE)
 	prior_sigma=dunif(sigma, 0, 20, log=TRUE)
 	prior_den=prior_theta_0+prior_theta_1+prior_sigma
 	return(log_hill_den+prior_den)
