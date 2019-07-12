@@ -3,7 +3,7 @@ library(mvtnorm)
 y=c() #response vector
 dose=c() #dose vector
 J=11 #number of doses	
-patient=1001#number of patients
+patient=1000#number of patients
 true_sigma=sqrt(10) #true deviation of responses
 mu_0=c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) #initial hyperparameter
 sigma_0=diag(100, nrow=J, ncol=J) #initial hyperparameter
@@ -13,21 +13,15 @@ theta_estimate=matrix(NA, nrow=patient, ncol=J)
 var_estimate=matrix(NA, nrow=patient, ncol=J)
 var_target=c()
 M=1000
-T=100
+T=1000
 n_simulation=30
 start_time=0
 end_time=0
 alpha=1
 ############################################################################
-#true_theta=c(0.0, 0.07, 0.18, 0.47, 1.19, 2.69, 5, 7.31, 8.81, 9.53, 9.82)
-#curve_st="sigmoid-significant"
-#target_dose=10
-#true_theta=c(0, 0.01, 0.02, 0.05, 0.12, 0.27, 0.5, 0.73, 0.88, 0.95, 0.98)
-#curve_st="sigmoid-not-significant"
-#target_dose=10
-true_theta=c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-curve_st="flat"
-target_dose=5
+true_theta=c(0.0, 0.07, 0.18, 0.47, 1.19, 2.69, 5, 7.31, 8.81, 9.53, 9.82)
+curve_st="sigmoid-significant"
+target_dose=10
 ############################################################################
 evolution_eq <-function(mu, sigma, new_y, z_j){
 	e_z = rep(0, J)
@@ -46,24 +40,24 @@ dose_allocation <-function(mu, sigma){
 	theta_sample<-rmvnorm(M, mu, sigma)
 	theta_est<-apply(theta_sample, 2, mean)
 	var_j=sapply(1:ncol(theta_sample), function(i) {
-														var_jm=unlist(lapply(theta_sample[, i], function(y) {	
-																												y_jm=rnorm(1, y, true_sigma)
-																												temp_res=evolution_eq(mu, sigma, y_jm, i)
-																												temp_mu=temp_res$mu
-																												temp_sigma=temp_res$sigma
-																												temp_theta_sample<-rmvnorm(T, temp_mu, temp_sigma)
-																												ED95=c()
-																												ED95=apply(temp_theta_sample, 1,function(z) {
-																																								if (all(z<=0)){
-																																									return(NA)
-																																								}else{
-																																									return (min(which(z>=0.95*max(z))))
-																																								}
-																																							})
-																												return(var(ED95, na.rm=TRUE))
-																											}))
-														return(mean(var_jm))
-													})
+		var_jm=unlist(lapply(theta_sample[, i], function(y) {	
+			y_jm=rnorm(1, y, true_sigma)
+			temp_res=evolution_eq(mu, sigma, y_jm, i)
+			temp_mu=temp_res$mu
+			temp_sigma=temp_res$sigma
+			temp_theta_sample<-rmvnorm(T, temp_mu, temp_sigma)
+			ED95=c()
+			ED95=apply(temp_theta_sample, 1,function(z) {
+				if (all(z<=0)){
+					return(NA)
+				}else{
+					return (min(which(z>=0.95*max(z))))
+				}
+			})
+			return(var(ED95, na.rm=TRUE))
+		}))
+		return(mean(var_jm))
+	})
 	return(list("variance"=var_j, "theta"=theta_est))
 }
 
@@ -97,10 +91,10 @@ for (reps in 1:n_simulation){
 			var_target=c(var_target, sigma_n[[K]][target_dose,target_dose])
 		}
 	}
-	write(var_target, file=paste("C:/Users/snasrol/Google Drive/Research-Optimal stopping in dose-finding clinical trials/Codes/Results/09-24-2018/dose-responses/",curve_st,"/1000patients-KGC-target_var-",toString(reps),".txt", sep=""), append=FALSE, sep="\n")
-	write(dose, file=paste("C:/Users/snasrol/Google Drive/Research-Optimal stopping in dose-finding clinical trials/Codes/Results/09-24-2018/dose-responses/",curve_st,"/1000patients-KGC-doses-",toString(reps),".txt", sep=""), append=FALSE, sep="\n")
-	write.table(var_estimate, file=paste("C:/Users/snasrol/Google Drive/Research-Optimal stopping in dose-finding clinical trials/Codes/Results/09-24-2018/dose-responses/",curve_st,"/1000patients-KGC-var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
-	write.table(theta_estimate, file=paste("C:/Users/snasrol/Google Drive/Research-Optimal stopping in dose-finding clinical trials/Codes/Results/09-24-2018/dose-responses/",curve_st,"/1000patients-KGC-thetas-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+	write(var_target, file=paste("C:/Results/",curve_st,"/KGC-target_var-",toString(reps),".txt", sep=""), append=FALSE, sep="\n")
+	write(dose, file=paste("C:/Results/",curve_st,"/KGC-doses-",toString(reps),".txt", sep=""), append=FALSE, sep="\n")
+	write.table(var_estimate, file=paste("C:/Results/",curve_st,"/KGC-var-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
+	write.table(theta_estimate, file=paste("C:/Results/",curve_st,"/KGC-thetas-",toString(reps),".txt", sep=""), sep="\t", eol="\n", row.names=FALSE, col.names=FALSE)
 	y=c() #response vector
 	dose=c() #dose vector
 	mu_n=lapply(1:patient, function(x) c())
